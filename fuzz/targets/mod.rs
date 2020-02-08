@@ -7,8 +7,8 @@ mod util;
 use self::util::ReadLiteralExt;
 use failure::Error;
 use std::io::Cursor;
-use tidb_query::codec::datum_codec::DatumFlagAndPayloadEncoder;
-use tidb_query::expr::{EvalConfig, EvalContext};
+use tidb_query_datatype::codec::datum_codec::DatumFlagAndPayloadEncoder;
+use tidb_query_datatype::expr::{EvalConfig, EvalContext};
 
 #[inline(always)]
 pub fn fuzz_codec_bytes(data: &[u8]) -> Result<(), Error> {
@@ -91,11 +91,11 @@ pub fn fuzz_codec_number(data: &[u8]) -> Result<(), Error> {
 trait ReadAsDecimalRoundMode: ReadLiteralExt {
     fn read_as_decimal_round_mode(
         &mut self,
-    ) -> Result<::tidb_query::codec::mysql::decimal::RoundMode, Error> {
+    ) -> Result<::tidb_query_datatype::codec::mysql::decimal::RoundMode, Error> {
         Ok(match self.read_as_u8()? % 3 {
-            0 => tidb_query::codec::mysql::decimal::RoundMode::HalfEven,
-            1 => tidb_query::codec::mysql::decimal::RoundMode::Truncate,
-            _ => tidb_query::codec::mysql::decimal::RoundMode::Ceiling,
+            0 => tidb_query_datatype::codec::mysql::decimal::RoundMode::HalfEven,
+            1 => tidb_query_datatype::codec::mysql::decimal::RoundMode::Truncate,
+            _ => tidb_query_datatype::codec::mysql::decimal::RoundMode::Ceiling,
         })
     }
 }
@@ -104,8 +104,8 @@ impl<T: ReadLiteralExt> ReadAsDecimalRoundMode for T {}
 
 #[inline(always)]
 pub fn fuzz_coprocessor_codec_decimal(data: &[u8]) -> Result<(), Error> {
-    use tidb_query::codec::convert::ConvertTo;
-    use tidb_query::codec::data_type::Decimal;
+    use tidb_query_datatype::codec::convert::ConvertTo;
+    use tidb_query_datatype::codec::data_type::Decimal;
 
     fn fuzz(lhs: &Decimal, rhs: &Decimal, cursor: &mut Cursor<&[u8]>) -> Result<(), Error> {
         let _ = lhs.clone().abs();
@@ -149,8 +149,8 @@ pub fn fuzz_coprocessor_codec_decimal(data: &[u8]) -> Result<(), Error> {
 pub fn fuzz_hash_decimal(data: &[u8]) -> Result<(), Error> {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
-    use tidb_query::codec::data_type::Decimal;
-    use tidb_query::codec::mysql::DecimalDecoder;
+    use tidb_query_datatype::codec::data_type::Decimal;
+    use tidb_query_datatype::codec::mysql::DecimalDecoder;
 
     fn fuzz_eq_then_hash(lhs: &Decimal, rhs: &Decimal) -> Result<(), Error> {
         if lhs == rhs {
@@ -175,21 +175,26 @@ pub fn fuzz_hash_decimal(data: &[u8]) -> Result<(), Error> {
 }
 
 trait ReadAsTimeType: ReadLiteralExt {
-    fn read_as_time_type(&mut self) -> Result<::tidb_query::codec::mysql::TimeType, Error> {
+    fn read_as_time_type(
+        &mut self,
+    ) -> Result<::tidb_query_datatype::codec::mysql::TimeType, Error> {
         Ok(match self.read_as_u8()? % 3 {
-            0 => tidb_query::codec::mysql::TimeType::Date,
-            1 => tidb_query::codec::mysql::TimeType::DateTime,
-            _ => tidb_query::codec::mysql::TimeType::Timestamp,
+            0 => tidb_query_datatype::codec::mysql::TimeType::Date,
+            1 => tidb_query_datatype::codec::mysql::TimeType::DateTime,
+            _ => tidb_query_datatype::codec::mysql::TimeType::Timestamp,
         })
     }
 }
 
 impl<T: ReadLiteralExt> ReadAsTimeType for T {}
 
-fn fuzz_time(t: tidb_query::codec::mysql::Time, mut cursor: Cursor<&[u8]>) -> Result<(), Error> {
-    use tidb_query::codec::convert::ConvertTo;
-    use tidb_query::codec::data_type::{Decimal, Duration};
-    use tidb_query::codec::mysql::TimeEncoder;
+fn fuzz_time(
+    t: tidb_query_datatype::codec::mysql::Time,
+    mut cursor: Cursor<&[u8]>,
+) -> Result<(), Error> {
+    use tidb_query_datatype::codec::convert::ConvertTo;
+    use tidb_query_datatype::codec::data_type::{Decimal, Duration};
+    use tidb_query_datatype::codec::mysql::TimeEncoder;
 
     let mut ctx = EvalContext::default();
     let _ = t.clone().set_time_type(cursor.read_as_time_type()?);
@@ -214,7 +219,7 @@ fn fuzz_time(t: tidb_query::codec::mysql::Time, mut cursor: Cursor<&[u8]>) -> Re
 
 pub fn fuzz_coprocessor_codec_time_from_parse(data: &[u8]) -> Result<(), Error> {
     use std::io::Read;
-    use tidb_query::codec::mysql::{Time, Tz};
+    use tidb_query_datatype::codec::mysql::{Time, Tz};
     let mut cursor = Cursor::new(data);
     let tz = Tz::from_offset(cursor.read_as_i64()?).unwrap_or_else(Tz::utc);
     let mut ctx = EvalContext::new(std::sync::Arc::new(EvalConfig {
@@ -229,7 +234,7 @@ pub fn fuzz_coprocessor_codec_time_from_parse(data: &[u8]) -> Result<(), Error> 
 }
 
 pub fn fuzz_coprocessor_codec_time_from_u64(data: &[u8]) -> Result<(), Error> {
-    use tidb_query::codec::mysql::{Time, Tz};
+    use tidb_query_datatype::codec::mysql::{Time, Tz};
     let mut cursor = Cursor::new(data);
     let u = cursor.read_as_u64()?;
     let time_type = cursor.read_as_time_type()?;
@@ -245,11 +250,11 @@ pub fn fuzz_coprocessor_codec_time_from_u64(data: &[u8]) -> Result<(), Error> {
 
 // Duration
 fn fuzz_duration(
-    t: tidb_query::codec::mysql::Duration,
+    t: tidb_query_datatype::codec::mysql::Duration,
     mut cursor: Cursor<&[u8]>,
 ) -> Result<(), Error> {
-    use tidb_query::codec::convert::ConvertTo;
-    use tidb_query::codec::mysql::decimal::Decimal;
+    use tidb_query_datatype::codec::convert::ConvertTo;
+    use tidb_query_datatype::codec::mysql::decimal::Decimal;
 
     let _ = t.fsp();
     let u = t;
@@ -273,7 +278,7 @@ fn fuzz_duration(
 }
 
 pub fn fuzz_coprocessor_codec_duration_from_nanos(data: &[u8]) -> Result<(), Error> {
-    use tidb_query::codec::mysql::Duration;
+    use tidb_query_datatype::codec::mysql::Duration;
     let mut cursor = Cursor::new(data);
     let nanos = cursor.read_as_i64()?;
     let fsp = cursor.read_as_i8()?;
@@ -282,7 +287,7 @@ pub fn fuzz_coprocessor_codec_duration_from_nanos(data: &[u8]) -> Result<(), Err
 
 pub fn fuzz_coprocessor_codec_duration_from_parse(data: &[u8]) -> Result<(), Error> {
     use std::io::Read;
-    use tidb_query::codec::mysql::Duration;
+    use tidb_query_datatype::codec::mysql::Duration;
     let mut cursor = Cursor::new(data);
     let fsp = cursor.read_as_i8()?;
     let mut buf: [u8; 32] = [b' '; 32];

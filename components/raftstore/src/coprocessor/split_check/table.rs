@@ -8,7 +8,7 @@ use engine::{IterOption, Iterable};
 use engine_traits::CF_WRITE;
 use kvproto::metapb::Region;
 use kvproto::pdpb::CheckPolicy;
-use tidb_query::codec::table as table_codec;
+use tidb_query_datatype::codec::table as table_codec;
 use tikv_util::keybuilder::KeyBuilder;
 use txn_types::Key;
 
@@ -233,7 +233,7 @@ mod tests {
     use engine::rocks::util::new_engine;
     use engine::rocks::Writable;
     use engine_traits::ALL_CFS;
-    use tidb_query::codec::table::{TABLE_PREFIX, TABLE_PREFIX_KEY_LEN};
+    use tidb_query_datatype::codec::table::{TABLE_PREFIX, TABLE_PREFIX_KEY_LEN};
     use tikv_util::codec::number::NumberEncoder;
     use tikv_util::config::ReadableSize;
     use tikv_util::worker::Runnable;
