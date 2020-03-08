@@ -86,7 +86,7 @@ mod tests {
     use super::super::Executor;
     use tidb_query_datatype::execute_stats::ExecuteStats;
     use tidb_query_datatype::expr::EvalContext;
-    use tidb_query_datatype::storage::fixture::FixtureStorage;
+    use tidb_query_datatype::storage::test_fixture::FixtureStorage;
 
     const TABLE_ID: i64 = 1;
     const KEY_NUMBER: usize = 10;
